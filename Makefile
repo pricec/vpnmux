@@ -8,6 +8,9 @@ ALPINE_IMAGE   := alpine:${ALPINE_VERSION}
 
 GO := docker run -u $$(id -u):$$(id -g) -e GOCACHE=/v/.cache -e CGO_ENABLED=0 -v $(MKFILE_DIR):/v -w /v --rm -t $(GO_IMAGE) go
 
+.PHONY: all
+all: vpnmux
+
 .PHONY: test
 test:
 	$(GO) test -v -cover $(MOD_PATH)/...
