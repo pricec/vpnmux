@@ -40,6 +40,7 @@ func NewVPNNetwork(name string) (*VPNNetwork, error) {
 	err := exec.Command(
 		"docker", "network", "create",
 		"--label", fmt.Sprintf("%s=%s", labelKey, labelValue),
+		"--label", fmt.Sprintf("name=%s", name),
 		name,
 	).Run()
 	if err != nil {
@@ -47,7 +48,11 @@ func NewVPNNetwork(name string) (*VPNNetwork, error) {
 	}
 
 	// TODO: cleanup if any of these steps fail
-	output, err := exec.Command("docker", "network", "inspect", name).Output()
+	return NewVPNNetworkFromID(name)
+}
+
+func NewVPNNetworkFromID(id string) (*VPNNetwork, error) {
+	output, err := exec.Command("docker", "network", "inspect", id).Output()
 	if err != nil {
 		return nil, err
 	}

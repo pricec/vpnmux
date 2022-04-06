@@ -11,6 +11,7 @@ import (
 	"github.com/pricec/vpnmux/pkg/network"
 )
 
+// TODO: move this to another package?
 type InstanceManager struct {
 	sync.Mutex
 	Instances map[uuid.UUID]*network.VPNInstance
@@ -31,6 +32,7 @@ func (m *InstanceManager) List(w http.ResponseWriter, r *http.Request) {
 }
 
 // try ve-car.prod.surfshark.com_tcp.ovpn
+// try us-chi.prod.surfshark.com_udp.ovpn
 type createInstanceRequest struct {
 	Config string `json:"config"`
 }

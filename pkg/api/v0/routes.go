@@ -1,14 +1,20 @@
 package v0
 
 import (
-	"github.com/google/uuid"
+	"log"
+
 	"github.com/gorilla/mux"
 	"github.com/pricec/vpnmux/pkg/network"
 )
 
 func RegisterHandlers(r *mux.Router) {
+	instances, err := network.RecoverVPNInstances()
+	if err != nil {
+		log.Panicf("failed to recover instances: %v", err)
+	}
+
 	im := &InstanceManager{
-		Instances: make(map[uuid.UUID]*network.VPNInstance),
+		Instances: instances,
 	}
 	r.HandleFunc("/network", im.List).Methods("GET")
 	r.HandleFunc("/network", im.Create).Methods("POST")

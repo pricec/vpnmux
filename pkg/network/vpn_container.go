@@ -8,7 +8,7 @@ import (
 
 const imageName = "openvpn-client"
 
-type ContainerInspect struct {
+type ContainerInspectOutput struct {
 	ID    string `json:"Id"`
 	State struct {
 		Status     string `json:"Status"`
@@ -55,22 +55,28 @@ func NewVPNContainer(networkName string, configFile string) (*VPNContainer, erro
 		"--cap-add", "NET_ADMIN",
 		"--device", "/dev/net/tun",
 		"--label", fmt.Sprintf("%s=%s", labelKey, labelValue),
+		"--label", fmt.Sprintf("name=%s", networkName),
 		"-d", imageName, configFile,
 	).Output()
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: clean up if anything below fails
-	output, err := exec.Command("docker", "inspect", string(id[:len(id)-1])).Output()
+	// TODO: clean up if this call fails
+	return NewVPNContainerFromID(string(id[:len(id)-1]))
+}
+
+func NewVPNContainerFromID(id string) (*VPNContainer, error) {
+	output, err := exec.Command("docker", "inspect", id).Output()
 	if err != nil {
 		return nil, err
 	}
 
-	inspect := []ContainerInspect{}
+	inspect := []ContainerInspectOutput{}
 	if err := json.Unmarshal(output, &inspect); err != nil {
 		return nil, err
 	}
+	networkName := inspect[0].Config.Labels["name"]
 
 	return &VPNContainer{
 		ID:        inspect[0].ID,
