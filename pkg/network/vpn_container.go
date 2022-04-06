@@ -27,9 +27,12 @@ type ContainerInspect struct {
 		Labels map[string]string `json:"Labels"`
 	} `json:"Config"`
 	NetworkSettings struct {
-		IPAddress   string `json:"IPAddress"`
-		IPPrefixLen int    `json:"IPPrefixLen"`
-		MacAddress  string `json:"MacAddress"`
+		Networks map[string]struct {
+			Gateway     string `json:"Gateway"`
+			IPAddress   string `json:"IPAddress"`
+			IPPrefixLen int    `json:"IPPrefixLen"`
+			MacAddress  string `json:"MacAddress"`
+		} `json:"Networks"`
 	} `json:"NetworkSettings"`
 }
 
@@ -43,11 +46,11 @@ func (v *VPNContainer) String() string {
 	return fmt.Sprintf("Name=%s; ID=%s; IPAddress=%s", v.Name, v.ID, v.IPAddress)
 }
 
-func NewVPNContainer(networkID string, configFile string) (*VPNContainer, error) {
+func NewVPNContainer(networkName string, configFile string) (*VPNContainer, error) {
 	// TODO: use docker library instead of exec
 	id, err := exec.Command(
 		"docker", "run",
-		"--network", networkID,
+		"--network", networkName,
 		"--restart", "unless-stopped",
 		"--cap-add", "NET_ADMIN",
 		"--device", "/dev/net/tun",
@@ -72,7 +75,7 @@ func NewVPNContainer(networkID string, configFile string) (*VPNContainer, error)
 	return &VPNContainer{
 		ID:        inspect[0].ID,
 		Name:      inspect[0].Name,
-		IPAddress: inspect[0].NetworkSettings.IPAddress,
+		IPAddress: inspect[0].NetworkSettings.Networks[networkName].IPAddress,
 	}, nil
 }
 
