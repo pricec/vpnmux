@@ -11,7 +11,7 @@ import (
 var schema = []string{
 	`
 CREATE TABLE IF NOT EXISTS client (
-  address VARCHAR(64) PRIMARY KEY
+  address VARCHAR(64) PRIMARY KEY,
   network VARCHAR(128) NULL
 );
 `,

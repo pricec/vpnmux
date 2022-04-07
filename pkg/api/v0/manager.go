@@ -11,17 +11,25 @@ import (
 	"github.com/pricec/vpnmux/pkg/network"
 )
 
+type ClientNetwork struct {
+	address string
+	network string
+	rtID    int
+}
+
 type Manager struct {
 	sync.Mutex
-	db        *network.Database
-	clients   map[string]*network.VPNClient
-	instances map[uuid.UUID]*network.VPNInstance
+	db          *network.Database
+	clients     map[string]*network.VPNClient
+	networks    map[uuid.UUID]*network.VPNInstance
+	assignments map[string]*ClientNetwork
 }
 
 func NewManager(db *network.Database) (*Manager, error) {
 	mgr := &Manager{
-		db:      db,
-		clients: make(map[string]*network.VPNClient),
+		db:          db,
+		clients:     make(map[string]*network.VPNClient),
+		assignments: make(map[string]*ClientNetwork),
 	}
 
 	if err := mgr.restore(); err != nil {
@@ -31,12 +39,24 @@ func NewManager(db *network.Database) (*Manager, error) {
 	return mgr, nil
 }
 
+func (m *Manager) ListClientNetwork(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (m *Manager) AssignClientNetwork(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (m *Manager) DeleteClientNetwork(w http.ResponseWriter, r *http.Request) {
+
+}
+
 func (m *Manager) restore() error {
-	instances, err := network.RecoverVPNInstances()
+	networks, err := network.RecoverVPNInstances()
 	if err != nil {
 		return err
 	}
-	m.instances = instances
+	m.networks = networks
 
 	clients, err := m.db.GetClients()
 	if err != nil {
@@ -138,8 +158,8 @@ func (m *Manager) ListNetworks(w http.ResponseWriter, r *http.Request) {
 	m.Lock()
 	defer m.Unlock()
 
-	ids := make([]string, 0, len(m.instances))
-	for id, _ := range m.instances {
+	ids := make([]string, 0, len(m.networks))
+	for id, _ := range m.networks {
 		ids = append(ids, id.String())
 	}
 
@@ -166,14 +186,14 @@ func (m *Manager) CreateNetwork(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	instance, err := network.NewVPNInstance(id.String(), body.Config)
+	network, err := network.NewVPNInstance(id.String(), body.Config)
 	if err != nil {
 		log.Printf("error creating instance: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	m.instances[id] = instance
+	m.networks[id] = network
 	json.NewEncoder(w).Encode(id.String())
 }
 
@@ -187,17 +207,17 @@ func (m *Manager) DeleteNetwork(w http.ResponseWriter, r *http.Request) {
 
 	m.Lock()
 	defer m.Unlock()
-	instance, ok := m.instances[id]
+	network, ok := m.networks[id]
 	if !ok {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	if err := instance.Close(); err != nil {
+	if err := network.Close(); err != nil {
 		log.Printf("error deleting instance: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	delete(m.instances, id)
+	delete(m.networks, id)
 }

@@ -25,4 +25,8 @@ func RegisterHandlers(r *mux.Router) {
 	r.HandleFunc("/client", mgr.ListClients).Methods("GET")
 	r.HandleFunc("/client", mgr.CreateClient).Methods("POST")
 	r.HandleFunc("/client/{addr}", mgr.DeleteClient).Methods("DELETE")
+
+	r.HandleFunc("/client/{addr}/network", mgr.ListClientNetwork).Methods("GET")
+	r.HandleFunc("/client/{addr}/network/{network}", mgr.AssignClientNetwork).Methods("POST")
+	r.HandleFunc("/client/{addr}/network", mgr.DeleteClientNetwork).Methods("DELETE")
 }
