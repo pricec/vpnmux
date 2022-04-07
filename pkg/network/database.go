@@ -5,7 +5,7 @@ import (
 	"os"
 	"path"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 var schema = []string{
@@ -38,7 +38,7 @@ func NewDatabase() (*Database, error) {
 
 func (d *Database) setup() error {
 	var err error
-	d.db, err = sql.Open("sqlite3", d.path)
+	d.db, err = sql.Open("sqlite", d.path)
 	if err != nil {
 		return err
 	}
@@ -71,11 +71,14 @@ func (d *Database) GetClients() ([]Client, error) {
 
 	var clients = make([]Client, 0)
 	for rows.Next() {
-		var client Client
-		if err := rows.Scan(&client.Address, &client.Network); err != nil {
+		var addr, network sql.NullString
+		if err := rows.Scan(&addr, &network); err != nil {
 			return nil, err
 		}
-		clients = append(clients, client)
+		clients = append(clients, Client{
+			Address: addr.String,
+			Network: network.String,
+		})
 	}
 
 	if err := rows.Err(); err != nil {
