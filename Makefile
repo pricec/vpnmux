@@ -6,7 +6,7 @@ GO_VERSION     := 1.17.2
 GO_IMAGE       := golang:${GO_VERSION}
 ALPINE_IMAGE   := alpine:${ALPINE_VERSION}
 
-GO := docker run -u $$(id -u):$$(id -g) -e GOCACHE=/v/.cache -v $(MKFILE_DIR):/v -w /v --rm -t $(GO_IMAGE) go
+GO := docker run -u $$(id -u):$$(id -g) -e CGO_ENABLED=0 -e GOCACHE=/v/.cache -v $(MKFILE_DIR):/v -w /v --rm -t $(GO_IMAGE) go
 
 .PHONY: all
 all: vpnmux
