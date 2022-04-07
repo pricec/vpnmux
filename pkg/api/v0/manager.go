@@ -92,7 +92,7 @@ func (m *Manager) ListClientNetwork(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("none"))
 		return
 	}
-	w.Write([]byte(clientNetwork.Network.ID))
+	w.Write([]byte(clientNetwork.Network.Name))
 }
 
 func (m *Manager) AssignClientNetwork(w http.ResponseWriter, r *http.Request) {
