@@ -286,6 +286,32 @@ func (m *Manager) CreateNetwork(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(id.String())
 }
 
+func (m *Manager) DescribeNetwork(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	id, err := uuid.Parse(params["id"])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	m.Lock()
+	defer m.Unlock()
+	network, ok := m.networks[id]
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(createNetworkRequest{
+		Config: network.Container.Config,
+	})
+	if err != nil {
+		log.Printf("error encoding response: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+}
+
 func (m *Manager) DeleteNetwork(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := uuid.Parse(params["id"])

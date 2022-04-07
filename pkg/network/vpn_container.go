@@ -17,7 +17,8 @@ var (
 )
 
 type ContainerInspectOutput struct {
-	ID    string `json:"Id"`
+	ID    string   `json:"Id"`
+	Args  []string `json:"Args"`
 	State struct {
 		Status     string `json:"Status"`
 		Running    bool   `json:"Running"`
@@ -47,6 +48,7 @@ type ContainerInspectOutput struct {
 type VPNContainer struct {
 	ID           string
 	Name         string
+	Config       string
 	RouteTableID int
 	IPAddress    string
 }
@@ -100,6 +102,7 @@ func NewVPNContainerFromID(id string) (*VPNContainer, error) {
 	v := &VPNContainer{
 		ID:           inspect[0].ID,
 		Name:         inspect[0].Name,
+		Config:       inspect[0].Args[0],
 		IPAddress:    inspect[0].NetworkSettings.Networks[networkName].IPAddress,
 		RouteTableID: routeTableID,
 	}
