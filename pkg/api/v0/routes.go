@@ -8,28 +8,21 @@ import (
 )
 
 func RegisterHandlers(r *mux.Router) {
-	instances, err := network.RecoverVPNInstances()
-	if err != nil {
-		log.Panicf("failed to recover instances: %v", err)
-	}
-
-	im := &InstanceManager{
-		Instances: instances,
-	}
-	r.HandleFunc("/network", im.List).Methods("GET")
-	r.HandleFunc("/network", im.Create).Methods("POST")
-	r.HandleFunc("/network/{id}", im.Delete).Methods("DELETE")
-
 	db, err := network.NewDatabase()
 	if err != nil {
 		log.Panicf("failed to instantiate database: %v", err)
 	}
 
-	cm, err := NewClientManager(db)
+	mgr, err := NewManager(db)
 	if err != nil {
-		log.Panicf("failed to create client manager: %v", err)
+		log.Panicf("failed to set up manager: %v", err)
 	}
-	r.HandleFunc("/client", cm.List).Methods("GET")
-	r.HandleFunc("/client", cm.Create).Methods("POST")
-	r.HandleFunc("/client/{addr}", cm.Delete).Methods("DELETE")
+
+	r.HandleFunc("/network", mgr.ListNetworks).Methods("GET")
+	r.HandleFunc("/network", mgr.CreateNetwork).Methods("POST")
+	r.HandleFunc("/network/{id}", mgr.DeleteNetwork).Methods("DELETE")
+
+	r.HandleFunc("/client", mgr.ListClients).Methods("GET")
+	r.HandleFunc("/client", mgr.CreateClient).Methods("POST")
+	r.HandleFunc("/client/{addr}", mgr.DeleteClient).Methods("DELETE")
 }

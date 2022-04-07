@@ -20,6 +20,10 @@ func NewVPNClient(address string) (*VPNClient, error) {
 	return c, nil
 }
 
+func (c *VPNClient) Close() error {
+	return c.iptablesCommand("D").Run()
+}
+
 func (c *VPNClient) iptablesCommand(operation string) *exec.Cmd {
 	return exec.Command(
 		"iptables",
@@ -48,8 +52,4 @@ func (c *VPNClient) preventForwarding() error {
 	}
 
 	return c.iptablesCommand("A").Run()
-}
-
-func (c *VPNClient) Close() error {
-	return c.iptablesCommand("D").Run()
 }

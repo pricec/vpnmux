@@ -12,6 +12,7 @@ var schema = []string{
 	`
 CREATE TABLE IF NOT EXISTS client (
   address VARCHAR(64) PRIMARY KEY
+  network VARCHAR(128) NULL
 );
 `,
 }
@@ -56,30 +57,40 @@ func (d *Database) Close() error {
 	return d.db.Close()
 }
 
-func (d *Database) GetClients() ([]string, error) {
-	rows, err := d.db.Query("SELECT address FROM client;")
+type Client struct {
+	Address string
+	Network string
+}
+
+func (d *Database) GetClients() ([]Client, error) {
+	rows, err := d.db.Query("SELECT address, network FROM client;")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var addresses = make([]string, 0)
+	var clients = make([]Client, 0)
 	for rows.Next() {
-		var address string
-		if err := rows.Scan(&address); err != nil {
+		var client Client
+		if err := rows.Scan(&client.Address, &client.Network); err != nil {
 			return nil, err
 		}
-		addresses = append(addresses, address)
+		clients = append(clients, client)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	return addresses, nil
+	return clients, nil
 }
 
 func (d *Database) PutClient(address string) error {
 	_, err := d.db.Exec("INSERT INTO client(address) VALUES(?);", address)
+	return err
+}
+
+func (d *Database) SetClientNetwork(address string, network string) error {
+	_, err := d.db.Exec("UPDATE client SET network = ? WHERE address = ?;", network, address)
 	return err
 }
 
