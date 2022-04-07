@@ -2,6 +2,7 @@ package v0
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"sync"
@@ -11,25 +12,19 @@ import (
 	"github.com/pricec/vpnmux/pkg/network"
 )
 
-type ClientNetwork struct {
-	address string
-	network string
-	rtID    int
-}
-
 type Manager struct {
 	sync.Mutex
 	db          *network.Database
 	clients     map[string]*network.VPNClient
 	networks    map[uuid.UUID]*network.VPNInstance
-	assignments map[string]*ClientNetwork
+	assignments map[*network.VPNClient]*network.VPNInstance
 }
 
 func NewManager(db *network.Database) (*Manager, error) {
 	mgr := &Manager{
 		db:          db,
 		clients:     make(map[string]*network.VPNClient),
-		assignments: make(map[string]*ClientNetwork),
+		assignments: make(map[*network.VPNClient]*network.VPNInstance),
 	}
 
 	if err := mgr.restore(); err != nil {
@@ -37,18 +32,6 @@ func NewManager(db *network.Database) (*Manager, error) {
 	}
 
 	return mgr, nil
-}
-
-func (m *Manager) ListClientNetwork(w http.ResponseWriter, r *http.Request) {
-
-}
-
-func (m *Manager) AssignClientNetwork(w http.ResponseWriter, r *http.Request) {
-
-}
-
-func (m *Manager) DeleteClientNetwork(w http.ResponseWriter, r *http.Request) {
-
 }
 
 func (m *Manager) restore() error {
@@ -64,14 +47,120 @@ func (m *Manager) restore() error {
 	}
 
 	for _, client := range clients {
-		client, err := network.NewVPNClient(client.Address)
+		vpnClient, err := network.NewVPNClient(client.Address)
 		if err != nil {
 			return err
 		}
+		m.clients[client.Address] = vpnClient
 
-		m.clients[client.Address] = client
+		// Set up routing
+		if client.Network != "" {
+			networkID, err := uuid.Parse(client.Network)
+			if err != nil {
+				return fmt.Errorf("error parsing client network %v: %v", client.Network, err)
+			}
+
+			clientNetwork, ok := m.networks[networkID]
+			if !ok {
+				log.Printf("network %v not found for client %v, clearing assignment", networkID, client.Address)
+				m.db.SetClientNetwork(client.Address, "NULL")
+			} else {
+				m.assignments[vpnClient] = clientNetwork
+				if err := vpnClient.SetRouteTable(clientNetwork.Container.RouteTableID); err != nil {
+					return err
+				}
+			}
+		}
 	}
 	return nil
+}
+
+func (m *Manager) ListClientNetwork(w http.ResponseWriter, r *http.Request) {
+	addr := mux.Vars(r)["addr"]
+
+	m.Lock()
+	defer m.Unlock()
+
+	client, ok := m.clients[addr]
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	clientNetwork, ok := m.assignments[client]
+	if !ok {
+		w.Write([]byte("none"))
+		return
+	}
+	w.Write([]byte(clientNetwork.Network.ID))
+}
+
+func (m *Manager) AssignClientNetwork(w http.ResponseWriter, r *http.Request) {
+	addr := mux.Vars(r)["addr"]
+	id := mux.Vars(r)["network"]
+	networkID, err := uuid.Parse(id)
+	if err != nil {
+		log.Printf("received bogus network ID %q: %v", id, err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	m.Lock()
+	defer m.Unlock()
+
+	client, ok := m.clients[addr]
+	if !ok {
+		log.Printf("unknown client %v", addr)
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	clientNetwork, ok := m.networks[networkID]
+	if !ok {
+		log.Printf("unknown network %v", networkID)
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if err := m.db.SetClientNetwork(addr, clientNetwork.Network.Name); err != nil {
+		log.Printf("failed updating client network: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if err := client.SetRouteTable(clientNetwork.Container.RouteTableID); err != nil {
+		log.Printf("error setting route table: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	m.assignments[client] = clientNetwork
+}
+
+func (m *Manager) DeleteClientNetwork(w http.ResponseWriter, r *http.Request) {
+	addr := mux.Vars(r)["addr"]
+
+	m.Lock()
+	defer m.Unlock()
+
+	client, ok := m.clients[addr]
+	if !ok {
+		log.Printf("unknown client %v", addr)
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if err := m.db.SetClientNetwork(addr, "NULL"); err != nil {
+		log.Printf("failed updating client network: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if err := client.ClearRoutes(); err != nil {
+		log.Printf("failed clearing routes for client: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 func (m *Manager) ListClients(w http.ResponseWriter, r *http.Request) {
