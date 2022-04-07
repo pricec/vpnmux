@@ -3,10 +3,10 @@ MOD_PATH   := github.com/pricec/vpnmux
 
 ALPINE_VERSION := 3.14
 GO_VERSION     := 1.17.2
-GO_IMAGE       := golang:${GO_VERSION}-alpine${ALPINE_VERSION}
+GO_IMAGE       := golang:${GO_VERSION}
 ALPINE_IMAGE   := alpine:${ALPINE_VERSION}
 
-GO := docker run -u $$(id -u):$$(id -g) -e GOCACHE=/v/.cache -e CGO_ENABLED=0 -v $(MKFILE_DIR):/v -w /v --rm -t $(GO_IMAGE) go
+GO := docker run -u $$(id -u):$$(id -g) -e GOCACHE=/v/.cache -v $(MKFILE_DIR):/v -w /v --rm -t $(GO_IMAGE) go
 
 .PHONY: all
 all: vpnmux
