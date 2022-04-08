@@ -15,13 +15,13 @@ type VPNInstance struct {
 	Container *VPNContainer
 }
 
-func NewVPNInstance(name string, config string) (*VPNInstance, error) {
+func NewVPNInstance(name, host, user, pass string) (*VPNInstance, error) {
 	net, err := NewVPNNetwork(name)
 	if err != nil {
 		return nil, err
 	}
 
-	ctr, err := NewVPNContainer(name, config)
+	ctr, err := NewVPNContainer(name, host, user, pass)
 	if err != nil {
 		// TODO: handle returned error?
 		net.Close()

@@ -5,12 +5,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"sync"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/pricec/vpnmux/pkg/network"
 )
+
+// TODO: plumb this in properly somehow
+var openvpnUsername = os.Getenv("OPENVPN_USERNAME")
+var openvpnPassword = os.Getenv("OPENVPN_PASSWORD")
 
 type Manager struct {
 	sync.Mutex
@@ -275,7 +280,7 @@ func (m *Manager) CreateNetwork(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	network, err := network.NewVPNInstance(id.String(), body.Config)
+	network, err := network.NewVPNInstance(id.String(), body.Config, openvpnUsername, openvpnPassword)
 	if err != nil {
 		log.Printf("error creating instance: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
