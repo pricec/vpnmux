@@ -17,11 +17,12 @@ var (
 )
 
 type Database struct {
-	db          *sql.DB
-	Credentials *CredentialDatabase
-	Configs     *ConfigDatabase
-	Networks    *NetworkDatabase
-	Clients     *ClientDatabase
+	db             *sql.DB
+	Credentials    *CredentialDatabase
+	Configs        *ConfigDatabase
+	Networks       *NetworkDatabase
+	Clients        *ClientDatabase
+	ClientNetworks *ClientNetworkDatabase
 }
 
 func New(ctx context.Context, dbPath string) (*Database, error) {
@@ -53,6 +54,9 @@ func New(ctx context.Context, dbPath string) (*Database, error) {
 			db: db,
 		},
 		Clients: &ClientDatabase{
+			db: db,
+		},
+		ClientNetworks: &ClientNetworkDatabase{
 			db: db,
 		},
 	}, nil
