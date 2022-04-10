@@ -16,7 +16,19 @@ var schema = []string{
         user_c TEXT,
         pass_c TEXT,
         ca_c TEXT,
-        ovpn_c TEXT
+        ovpn_c TEXT,
+        FOREIGN KEY(user_c) REFERENCES credential(id),
+        FOREIGN KEY(pass_c) REFERENCES credential(id),
+        FOREIGN KEY(ca_c) REFERENCES credential(id),
+        FOREIGN KEY(ovpn_c) REFERENCES credential(id)
+    );
+    `,
+	`
+    CREATE TABLE IF NOT EXISTS network(
+        id TEXT NOT NULL PRIMARY KEY,
+        name TEXT NOT NULL,
+        config TEXT NOT NULL,
+        FOREIGN KEY(config) REFERENCES config(id)
     );
     `,
 }

@@ -1,51 +1,12 @@
 package v1
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/pricec/vpnmux/pkg/database"
-	"github.com/pricec/vpnmux/pkg/openvpn"
 )
-
-func (m *Manager) WriteConfig(ctx context.Context, id string) error {
-	cfg, err := m.db.Configs.Get(ctx, id)
-	if err != nil {
-		return err
-	}
-
-	userCred, err := m.db.Credentials.Get(ctx, cfg.UserCred)
-	if err != nil {
-		return err
-	}
-
-	passCred, err := m.db.Credentials.Get(ctx, cfg.PassCred)
-	if err != nil {
-		return err
-	}
-
-	caCred, err := m.db.Credentials.Get(ctx, cfg.CACred)
-	if err != nil {
-		return err
-	}
-
-	ovpnCred, err := m.db.Credentials.Get(ctx, cfg.OVPNCred)
-	if err != nil {
-		return err
-	}
-
-	_, err = openvpn.NewConfig2(fmt.Sprintf("/var/lib/vpnmux/openvpn/%s", cfg.ID), openvpn.ConfigOptions{
-		Host:    cfg.Host,
-		User:    userCred.Value,
-		Pass:    passCred.Value,
-		CACert:  caCred.Value,
-		TLSCert: ovpnCred.Value,
-	})
-	return err
-}
 
 func (m *Manager) ListConfigs(w http.ResponseWriter, r *http.Request) {
 	creds, err := m.db.Configs.List(r.Context())
@@ -60,8 +21,6 @@ func (m *Manager) CreateConfig(w http.ResponseWriter, r *http.Request) {
 	}
 	cfg, err := m.db.Configs.Put(r.Context(), c)
 	check(w, cfg, err, ErrorDatabase)
-
-	m.WriteConfig(r.Context(), cfg.ID)
 }
 
 func (m *Manager) GetConfig(w http.ResponseWriter, r *http.Request) {

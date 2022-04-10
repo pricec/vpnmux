@@ -65,8 +65,8 @@ func (d *ConfigDatabase) Put(ctx context.Context, cfg *Config) (*Config, error) 
 	return cfg, nil
 }
 
-func (d *ConfigDatabase) Update(ctx context.Context, cred *Config) error {
-	result, err := d.db.ExecContext(ctx, "UPDATE config SET name = ?, host = ?, user_c = ?, pass_c = ?, ca_c = ?, ovpn_c = ? WHERE id = ?", cred.Name, cred.Host, cred.UserCred, cred.PassCred, cred.CACred, cred.OVPNCred, cred.ID)
+func (d *ConfigDatabase) Update(ctx context.Context, cfg *Config) error {
+	result, err := d.db.ExecContext(ctx, "UPDATE config SET name = ?, host = ?, user_c = ?, pass_c = ?, ca_c = ?, ovpn_c = ? WHERE id = ?", cfg.Name, cfg.Host, cfg.UserCred, cfg.PassCred, cfg.CACred, cfg.OVPNCred, cfg.ID)
 	if err == nil {
 		rows, err := result.RowsAffected()
 		if err != nil {

@@ -19,6 +19,7 @@ type Database struct {
 	db          *sql.DB
 	Credentials *CredentialDatabase
 	Configs     *ConfigDatabase
+	Networks    *NetworkDatabase
 }
 
 func New(ctx context.Context, dbPath string) (*Database, error) {
@@ -44,6 +45,9 @@ func New(ctx context.Context, dbPath string) (*Database, error) {
 			db: db,
 		},
 		Configs: &ConfigDatabase{
+			db: db,
+		},
+		Networks: &NetworkDatabase{
 			db: db,
 		},
 	}, nil

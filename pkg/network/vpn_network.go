@@ -21,6 +21,55 @@ type NetworkInspectOutput struct {
 	Labels map[string]string `json:"Labels"`
 }
 
+type Network struct {
+	ID      string
+	Name    string
+	Subnet  string
+	Gateway string
+}
+
+func New(name string) (*Network, error) {
+	// TODO: use docker library instead
+	err := exec.Command(
+		"docker", "network", "create",
+		"--label", fmt.Sprintf("%s=%s", labelKey, labelValue),
+		"--label", fmt.Sprintf("name=%s", name),
+		name,
+	).Run()
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: cleanup if any of these steps fail
+	return NewFromName(name)
+}
+
+func NewFromName(name string) (*Network, error) {
+	output, err := exec.Command("docker", "network", "inspect", name).Output()
+	if err != nil {
+		return nil, err
+	}
+
+	inspect := []NetworkInspectOutput{}
+	if err = json.Unmarshal(output, &inspect); err != nil {
+		return nil, err
+	}
+
+	// TODO: start VPN container running
+
+	return &Network{
+		Name:    inspect[0].Name,
+		ID:      inspect[0].ID,
+		Subnet:  inspect[0].IPAM.Config[0].Subnet,
+		Gateway: inspect[0].IPAM.Config[0].Gateway,
+	}, nil
+}
+
+func (v *Network) Close() error {
+	return exec.Command("docker", "network", "rm", v.Name).Run()
+}
+
+// TODO: remove VPNNetwork after deprecating v0 api
 type VPNNetwork struct {
 	Name    string
 	ID      string
