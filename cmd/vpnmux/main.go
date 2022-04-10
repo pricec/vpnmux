@@ -12,26 +12,29 @@ import (
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
 	sigCh := make(chan os.Signal, 1)
 	doneCh := make(chan struct{})
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
 		<-sigCh
+		cancel()
 		signal.Reset()
 		close(sigCh)
 		close(doneCh)
 	}()
 
-	server, err := api.NewServer(api.ServerOptions{
+	server, err := api.NewServer(ctx, api.ServerOptions{
 		ShutdownTimeout: 10 * time.Second,
 		ListenPort:      8080,
+		DBPath:          "/var/lib/vpnmux/v1.db",
 	})
 	if err != nil {
 		log.Fatalf("error setting up API server: %v", err)
 	}
 	defer func() {
-		err := server.Close(context.Background())
+		err := server.Close(ctx)
 		if err != nil {
 			log.Printf("error closing server: %v", err)
 		}

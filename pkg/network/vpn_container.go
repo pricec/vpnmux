@@ -188,7 +188,7 @@ func defaultRouteForTable(tableID int) (bool, string, error) {
 		return false, "", nil
 	case 1:
 	default:
-		log.Panicf("found %d default routes for table %s", len(parts), tableID)
+		log.Panicf("found %d default routes for table %d", len(parts), tableID)
 	}
 
 	s := reDefaultRoute.FindString(parts[0])
