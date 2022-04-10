@@ -3,21 +3,14 @@ package network
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os/exec"
-	"regexp"
 	"strconv"
-	"strings"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pricec/vpnmux/pkg/openvpn"
 )
 
 const imageName = "openvpn-client"
-
-var (
-	reDefaultRoute = regexp.MustCompile(`via [0-9.]+`)
-)
 
 type ContainerInspectOutput struct {
 	ID    string   `json:"Id"`
@@ -49,45 +42,50 @@ type ContainerInspectOutput struct {
 }
 
 type Container struct {
-	cfg          *openvpn.Config
+	Config       *openvpn.Config
 	ID           string
+	DockerID     string
 	Name         string
-	Config       string
 	RouteTableID int
 	IPAddress    string
 }
 
-func (c *Container) String() string {
-	return fmt.Sprintf("Name=%s; ID=%s; IPAddress=%s", c.Name, c.ID, c.IPAddress)
-}
-
-func NewContainer(networkName string, cfg *openvpn.Config) (*Container, error) {
+func NewContainer(id string, cfg *openvpn.Config) (*Container, error) {
 	// TODO: use docker library instead of exec
 	routeTableID, err := unusedRouteTableID()
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := exec.Command(
+	err = exec.Command(
 		"docker", "run",
-		"--network", networkName,
+		"--network", id,
 		"--restart", "unless-stopped",
 		"--cap-add", "NET_ADMIN",
 		"--device", "/dev/net/tun",
 		"-v", fmt.Sprintf("%s:/etc/openvpn/config", cfg.Dir),
 		"-w", "/etc/openvpn/config",
 		"--label", fmt.Sprintf("%s=%s", labelKey, labelValue),
-		"--label", fmt.Sprintf("name=%s", networkName),
+		"--label", fmt.Sprintf("id=%s", id),
+		"--label", fmt.Sprintf("config-id=%s", cfg.ID),
 		"--label", fmt.Sprintf("route-table-id=%d", routeTableID),
 		"-d", imageName, "openvpn.conf",
-	).Output()
+	).Run()
 	if err != nil {
 		return nil, err
 	}
-	// TODO: clean up if below fails
-	id := string(result[:len(result)-1])
+	// TODO: clean up if this fails?
+	return NewContainerFromID(id)
+}
 
-	output, err := exec.Command("docker", "inspect", id).Output()
+func NewContainerFromID(id string) (*Container, error) {
+	output, err := exec.Command("docker", "ps", "-q", "--filter", fmt.Sprintf("label=id=%s", id)).Output()
+	if err != nil {
+		return nil, err
+	}
+
+	dockerID := string(output[:len(output)-1])
+	output, err = exec.Command("docker", "inspect", dockerID).Output()
 	if err != nil {
 		return nil, err
 	}
@@ -97,12 +95,22 @@ func NewContainer(networkName string, cfg *openvpn.Config) (*Container, error) {
 		return nil, err
 	}
 
+	routeTableID, err := strconv.Atoi(inspect[0].Config.Labels["route-table-id"])
+	if err != nil {
+		return nil, err
+	}
+
+	cfg, err := openvpn.NewConfigFromID(inspect[0].Config.Labels["config-id"])
+	if err != nil {
+		return nil, err
+	}
+
 	v := &Container{
-		cfg:          cfg,
+		Config:       cfg,
 		ID:           inspect[0].ID,
+		DockerID:     dockerID,
 		Name:         inspect[0].Name,
-		Config:       inspect[0].Args[0],
-		IPAddress:    inspect[0].NetworkSettings.Networks[networkName].IPAddress,
+		IPAddress:    inspect[0].NetworkSettings.Networks[id].IPAddress,
 		RouteTableID: routeTableID,
 	}
 
@@ -131,55 +139,11 @@ func (v *Container) configureRouting() error {
 func (v *Container) Close() error {
 	var result error
 
-	if err := v.cfg.Close(); err != nil {
+	if err := exec.Command("docker", "rm", "-f", v.DockerID).Run(); err != nil {
 		result = multierror.Append(result, err)
 	}
 
-	if err := exec.Command("docker", "rm", "-f", v.ID).Run(); err != nil {
-		result = multierror.Append(result, err)
-	}
+	// TODO: clean up routing rules?
 
 	return result
-}
-
-func unusedRouteTableID() (int, error) {
-	// return an unused route table ID in the range [1,252]
-	for i := 1; i < 253; i = i + 1 {
-		output, err := exec.Command("ip", "route", "show", "table", strconv.Itoa(i)).Output()
-		if err != nil {
-			return 0, err
-		} else if len(output) == 0 {
-			return i, nil
-		}
-	}
-	return 0, fmt.Errorf("all routing table IDs seem to be in use")
-}
-
-func defaultRouteForTable(tableID int) (bool, string, error) {
-	output, err := exec.Command("ip", "route", "show", "table", strconv.Itoa(tableID), "default").Output()
-	if err != nil {
-		return false, "", err
-	} else if len(output) == 0 {
-		return false, "", nil
-	}
-
-	parts := strings.Split(string(output[:len(output)-1]), "\n")
-	switch len(parts) {
-	case 0:
-		return false, "", nil
-	case 1:
-	default:
-		log.Panicf("found %d default routes for table %d", len(parts), tableID)
-	}
-
-	s := reDefaultRoute.FindString(parts[0])
-	if s == "" {
-		return false, "", fmt.Errorf("string didn't match regexp")
-	}
-
-	parts = strings.Split(s, " ")
-	if len(parts) != 2 {
-		return false, "", fmt.Errorf("unexpected regexp match")
-	}
-	return true, parts[1], nil
 }

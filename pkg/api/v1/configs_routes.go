@@ -19,7 +19,8 @@ func (m *Manager) CreateConfig(w http.ResponseWriter, r *http.Request) {
 		check(w, nil, err, errDecode(err))
 		return
 	}
-	cfg, err := m.db.Configs.Put(r.Context(), c)
+
+	cfg, err := m.rec.Configs.Create(r.Context(), c)
 	check(w, cfg, err, ErrorDatabase)
 }
 
@@ -27,7 +28,7 @@ func (m *Manager) GetConfig(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 
 	var alt Error
-	cfg, err := m.db.Configs.Get(r.Context(), id)
+	cfg, _, err := m.rec.Configs.Get(r.Context(), id)
 	switch err {
 	case database.ErrNotFound:
 		alt = ErrorNotFound
@@ -47,21 +48,21 @@ func (m *Manager) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 	c.ID = id
 
 	var alt Error
-	err := m.db.Configs.Update(r.Context(), c)
+	cfg, err := m.rec.Configs.Update(r.Context(), c)
 	switch err {
 	case database.ErrNotFound:
 		alt = ErrorNotFound
 	default:
 		alt = ErrorDatabase
 	}
-	check(w, ErrorOK, err, alt)
+	check(w, cfg, err, alt)
 }
 
 func (m *Manager) DeleteConfig(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 
 	var alt Error
-	err := m.db.Configs.Delete(r.Context(), id)
+	err := m.rec.Configs.Delete(r.Context(), id)
 	switch err {
 	case database.ErrNotFound:
 		alt = ErrorNotFound

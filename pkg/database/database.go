@@ -13,6 +13,7 @@ import (
 
 var (
 	ErrNotFound = fmt.Errorf("object not found")
+	ErrInUse    = fmt.Errorf("object is in use")
 )
 
 type Database struct {

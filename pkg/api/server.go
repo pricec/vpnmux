@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	//"github.com/pricec/vpnmux/pkg/api/v0"
 	"github.com/pricec/vpnmux/pkg/api/v1"
 )
 
@@ -33,7 +32,6 @@ type ServerOptions struct {
 func NewServer(ctx context.Context, opts ServerOptions) (*Server, error) {
 	r := mux.NewRouter()
 	r.Handle("/healthz", HealthHandler{}).Methods("GET")
-	//v0.RegisterHandlers(r.PathPrefix("/v0").Subrouter())
 	v1.RegisterHandlers(ctx, r.PathPrefix("/v1").Subrouter(), opts.DBPath)
 
 	s := &Server{

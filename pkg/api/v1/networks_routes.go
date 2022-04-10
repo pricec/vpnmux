@@ -2,7 +2,6 @@ package v1
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -20,17 +19,15 @@ func (m *Manager) CreateNetwork(w http.ResponseWriter, r *http.Request) {
 		check(w, nil, err, errDecode(err))
 		return
 	}
-	net, err := m.db.Networks.Put(r.Context(), n)
+	net, err := m.rec.CreateNetwork(r.Context(), n)
 	check(w, net, err, ErrorDatabase)
-
-	log.Printf("error deploying network: %v", m.DeployNetwork(r.Context(), n))
 }
 
 func (m *Manager) GetNetwork(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 
 	var alt Error
-	net, err := m.db.Networks.Get(r.Context(), id)
+	net, _, err := m.rec.Networks.Get(r.Context(), id)
 	switch err {
 	case database.ErrNotFound:
 		alt = ErrorNotFound
@@ -50,21 +47,21 @@ func (m *Manager) UpdateNetwork(w http.ResponseWriter, r *http.Request) {
 	net.ID = id
 
 	var alt Error
-	err := m.db.Networks.Update(r.Context(), net)
+	net, err := m.rec.Networks.Update(r.Context(), net)
 	switch err {
 	case database.ErrNotFound:
 		alt = ErrorNotFound
 	default:
 		alt = ErrorDatabase
 	}
-	check(w, ErrorOK, err, alt)
+	check(w, net, err, alt)
 }
 
 func (m *Manager) DeleteNetwork(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 
 	var alt Error
-	err := m.db.Networks.Delete(r.Context(), id)
+	err := m.rec.Networks.Delete(r.Context(), id)
 	switch err {
 	case database.ErrNotFound:
 		alt = ErrorNotFound

@@ -3,14 +3,12 @@ package v1
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/pricec/vpnmux/pkg/database"
-	"github.com/pricec/vpnmux/pkg/network"
-	"github.com/pricec/vpnmux/pkg/openvpn"
+	"github.com/pricec/vpnmux/pkg/reconciler"
 )
 
 func RegisterHandlers(ctx context.Context, r *mux.Router, dbPath string) {
@@ -19,14 +17,23 @@ func RegisterHandlers(ctx context.Context, r *mux.Router, dbPath string) {
 		log.Panicf("error opening database: %v", err)
 	}
 
-	mgr := &Manager{
-		db: db,
+	rec, err := reconciler.New(ctx, db)
+	if err != nil {
+		log.Panicf("error creating reconciler: %v", err)
 	}
+
+	mgr := &Manager{
+		db:  db,
+		rec: rec,
+	}
+
+	// TODO: PATCH routes are currently disabled because of the cascading
+	// impact of changes (credential -> config -> network).
 
 	r.HandleFunc("/credential", mgr.ListCredentials).Methods("GET")
 	r.HandleFunc("/credential", mgr.CreateCredential).Methods("POST")
 	r.HandleFunc("/credential/{id}", mgr.GetCredential).Methods("GET")
-	r.HandleFunc("/credential/{id}", mgr.UpdateCredential).Methods("PATCH")
+	//r.HandleFunc("/credential/{id}", mgr.UpdateCredential).Methods("PATCH")
 	r.HandleFunc("/credential/{id}", mgr.DeleteCredential).Methods("DELETE")
 
 	r.HandleFunc("/config", mgr.ListConfigs).Methods("GET")
@@ -38,12 +45,13 @@ func RegisterHandlers(ctx context.Context, r *mux.Router, dbPath string) {
 	r.HandleFunc("/network", mgr.ListNetworks).Methods("GET")
 	r.HandleFunc("/network", mgr.CreateNetwork).Methods("POST")
 	r.HandleFunc("/network/{id}", mgr.GetNetwork).Methods("GET")
-	r.HandleFunc("/network/{id}", mgr.UpdateNetwork).Methods("PATCH")
+	r.HandleFunc("/config/{id}", mgr.UpdateConfig).Methods("PATCH")
 	r.HandleFunc("/network/{id}", mgr.DeleteNetwork).Methods("DELETE")
 }
 
 type Manager struct {
-	db *database.Database
+	db  *database.Database
+	rec *reconciler.Reconciler
 }
 
 type Error struct {
@@ -80,55 +88,4 @@ func check(w http.ResponseWriter, result interface{}, err error, alt Error) {
 		log.Printf("error encoding response: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
-}
-
-func (m *Manager) Config(ctx context.Context, id string) (*openvpn.Config, error) {
-	cfg, err := m.db.Configs.Get(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	userCred, err := m.db.Credentials.Get(ctx, cfg.UserCred)
-	if err != nil {
-		return nil, err
-	}
-
-	passCred, err := m.db.Credentials.Get(ctx, cfg.PassCred)
-	if err != nil {
-		return nil, err
-	}
-
-	caCred, err := m.db.Credentials.Get(ctx, cfg.CACred)
-	if err != nil {
-		return nil, err
-	}
-
-	ovpnCred, err := m.db.Credentials.Get(ctx, cfg.OVPNCred)
-	if err != nil {
-		return nil, err
-	}
-
-	return openvpn.NewConfig2(fmt.Sprintf("/var/lib/vpnmux/openvpn/%s", cfg.ID), openvpn.ConfigOptions{
-		Host:    cfg.Host,
-		User:    userCred.Value,
-		Pass:    passCred.Value,
-		CACert:  caCred.Value,
-		TLSCert: ovpnCred.Value,
-	})
-}
-
-func (m *Manager) DeployNetwork(ctx context.Context, n *database.Network) error {
-	cfg, err := m.Config(ctx, n.ConfigID)
-	if err != nil {
-		return err
-	}
-
-	// TODO: clean up network?
-	net, err := network.New(n.ID)
-	if err != nil {
-		return err
-	}
-
-	_, err = network.NewContainer(net.Name, cfg)
-	return err
 }
