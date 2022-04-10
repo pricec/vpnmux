@@ -31,4 +31,19 @@ var schema = []string{
         FOREIGN KEY(config) REFERENCES config(id)
     );
     `,
+	`
+    CREATE TABLE IF NOT EXISTS client(
+        id TEXT NOT NULL PRIMARY KEY,
+        name TEXT NOT NULL,
+        address TEXT NOT NULL
+    );
+    `,
+	`
+    CREATE TABLE IF NOT EXISTS client_network(
+        client_id TEXT NOT NULL PRIMARY KEY,
+        network_id TEXT,
+        FOREIGN KEY(client_id) REFERENCES client(id),
+        FOREIGN KEY(network_id) REFERENCES network(id)
+    );
+    `,
 }

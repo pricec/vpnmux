@@ -10,6 +10,7 @@ type Reconciler struct {
 	db       *database.Database
 	Configs  *ConfigReconciler
 	Networks *NetworkReconciler
+	Clients  *ClientReconciler
 }
 
 func New(ctx context.Context, db *database.Database) (*Reconciler, error) {
@@ -23,10 +24,16 @@ func New(ctx context.Context, db *database.Database) (*Reconciler, error) {
 		return nil, err
 	}
 
+	clients, err := NewClientReconciler(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Reconciler{
 		db:       db,
 		Configs:  configs,
 		Networks: networks,
+		Clients:  clients,
 	}, nil
 }
 

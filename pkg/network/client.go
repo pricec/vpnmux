@@ -3,53 +3,15 @@ package network
 import (
 	"fmt"
 	"os/exec"
-	"regexp"
 	"strconv"
-	"strings"
 )
 
-var (
-	reRouteTableID = regexp.MustCompile(`lookup \d+`)
-)
-
-// true iff source is currently routed to a numbered route table
-// TODO: ugly implemenation can probably be improved upon
-// TODO: use library code
-func routeTableIDsForSource(source string) ([]int, error) {
-	output, err := exec.Command("ip", "rule", "show", "from", source).Output()
-	if err != nil {
-		return nil, err
-	}
-
-	var result []int
-	parts := strings.Split(string(output), "\n")
-	for _, part := range parts {
-		if len(part) == 0 {
-			continue
-		}
-
-		s := reRouteTableID.FindString(part)
-		if s == "" {
-			return nil, fmt.Errorf("string didn't match regexp")
-		}
-
-		subparts := strings.Split(s, " ")
-		id, err := strconv.Atoi(subparts[1])
-		if err != nil {
-			return nil, err
-		}
-
-		result = append(result, id)
-	}
-	return result, nil
-}
-
-type VPNClient struct {
+type Client struct {
 	Address string
 }
 
-func NewVPNClient(address string) (*VPNClient, error) {
-	c := &VPNClient{
+func NewClient(address string) (*Client, error) {
+	c := &Client{
 		Address: address,
 	}
 
@@ -59,11 +21,11 @@ func NewVPNClient(address string) (*VPNClient, error) {
 	return c, nil
 }
 
-func (c *VPNClient) Close() error {
+func (c *Client) Close() error {
 	return c.iptablesCommand("D").Run()
 }
 
-func (c *VPNClient) iptablesCommand(operation string) *exec.Cmd {
+func (c *Client) iptablesCommand(operation string) *exec.Cmd {
 	return exec.Command(
 		"iptables",
 		"-t", "filter",
@@ -75,7 +37,7 @@ func (c *VPNClient) iptablesCommand(operation string) *exec.Cmd {
 	)
 }
 
-func (c *VPNClient) preventForwarding() error {
+func (c *Client) preventForwarding() error {
 	// Ensure packets are not forwarded from LAN -> WAN, since
 	// they should be routed via one of the managed VPNs.
 	// TODO: use library code instead of exec
@@ -93,7 +55,7 @@ func (c *VPNClient) preventForwarding() error {
 	return c.iptablesCommand("A").Run()
 }
 
-func (c *VPNClient) SetRouteTable(id int) error {
+func (c *Client) SetRouteTable(id int) error {
 	routeTableIDs, err := routeTableIDsForSource(c.Address)
 	if err != nil {
 		return err
@@ -118,7 +80,7 @@ func (c *VPNClient) SetRouteTable(id int) error {
 	return nil
 }
 
-func (c *VPNClient) ClearRoutes() error {
+func (c *Client) ClearRoutes() error {
 	routeTableIDs, err := routeTableIDsForSource(c.Address)
 	if err != nil {
 		return err
