@@ -53,6 +53,10 @@ func RegisterHandlers(ctx context.Context, r *mux.Router, dbPath string) {
 	r.HandleFunc("/client/{id}", mgr.GetClient).Methods("GET")
 	r.HandleFunc("/client/{id}", mgr.UpdateClient).Methods("PATCH")
 	r.HandleFunc("/client/{id}", mgr.DeleteClient).Methods("DELETE")
+
+	r.HandleFunc("/client/{id}/network", mgr.GetClientNetwork).Methods("GET")
+	r.HandleFunc("/client/{id}/network", mgr.UnsetClientNetwork).Methods("DELETE")
+	r.HandleFunc("/client/{id}/network/{network}", mgr.SetClientNetwork).Methods("POST")
 }
 
 type Manager struct {

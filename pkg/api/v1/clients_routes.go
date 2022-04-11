@@ -71,3 +71,49 @@ func (m *Manager) DeleteClient(w http.ResponseWriter, r *http.Request) {
 	}
 	check(w, ErrorOK, err, alt)
 }
+
+func (m *Manager) GetClientNetwork(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+
+	var alt Error
+	cn, _, err := m.rec.ClientNetworks.Get(r.Context(), id)
+	switch err {
+	case database.ErrNotFound:
+		alt = ErrorNotFound
+	default:
+		alt = ErrorDatabase
+	}
+	check(w, cn, err, alt)
+}
+
+func (m *Manager) SetClientNetwork(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+	network := mux.Vars(r)["network"]
+
+	var alt Error
+	cn, err := m.rec.ClientNetworks.Create(r.Context(), &database.ClientNetwork{
+		ClientID:  id,
+		NetworkID: network,
+	})
+	switch err {
+	case database.ErrNotFound:
+		alt = ErrorNotFound
+	default:
+		alt = ErrorDatabase
+	}
+	check(w, cn, err, alt)
+}
+
+func (m *Manager) UnsetClientNetwork(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+
+	var alt Error
+	err := m.rec.ClientNetworks.Delete(r.Context(), id)
+	switch err {
+	case database.ErrNotFound:
+		alt = ErrorNotFound
+	default:
+		alt = ErrorDatabase
+	}
+	check(w, ErrorOK, err, alt)
+}

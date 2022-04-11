@@ -7,10 +7,11 @@ import (
 )
 
 type Reconciler struct {
-	db       *database.Database
-	Configs  *ConfigReconciler
-	Networks *NetworkReconciler
-	Clients  *ClientReconciler
+	db             *database.Database
+	Configs        *ConfigReconciler
+	Networks       *NetworkReconciler
+	Clients        *ClientReconciler
+	ClientNetworks *ClientNetworkReconciler
 }
 
 func New(ctx context.Context, db *database.Database) (*Reconciler, error) {
@@ -29,11 +30,17 @@ func New(ctx context.Context, db *database.Database) (*Reconciler, error) {
 		return nil, err
 	}
 
+	clientNetworks, err := NewClientNetworkReconciler(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Reconciler{
-		db:       db,
-		Configs:  configs,
-		Networks: networks,
-		Clients:  clients,
+		db:             db,
+		Configs:        configs,
+		Networks:       networks,
+		Clients:        clients,
+		ClientNetworks: clientNetworks,
 	}, nil
 }
 
