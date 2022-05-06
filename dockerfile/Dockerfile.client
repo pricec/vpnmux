@@ -1,7 +1,10 @@
-FROM alpine:3.15.4
+ARG ALPINE_IMAGE
+
+FROM ${ALPINE_IMAGE}
 
 RUN apk add openvpn
 COPY entrypoint.sh /
 RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
+
