@@ -45,7 +45,7 @@ func RegisterHandlers(ctx context.Context, r *mux.Router, dbPath string) {
 	r.HandleFunc("/network", mgr.ListNetworks).Methods("GET")
 	r.HandleFunc("/network", mgr.CreateNetwork).Methods("POST")
 	r.HandleFunc("/network/{id}", mgr.GetNetwork).Methods("GET")
-	r.HandleFunc("/config/{id}", mgr.UpdateConfig).Methods("PATCH")
+	r.HandleFunc("/network/{id}", mgr.UpdateNetwork).Methods("PATCH")
 	r.HandleFunc("/network/{id}", mgr.DeleteNetwork).Methods("DELETE")
 
 	r.HandleFunc("/client", mgr.ListClients).Methods("GET")
