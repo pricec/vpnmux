@@ -91,7 +91,7 @@ func (m *Manager) SetClientNetwork(w http.ResponseWriter, r *http.Request) {
 	network := mux.Vars(r)["network"]
 
 	var alt Error
-	cn, err := m.rec.CreateClientNetwork(r.Context(), &database.ClientNetwork{
+	cn, err := m.rec.ClientNetworks.Create(r.Context(), &database.ClientNetwork{
 		ClientID:  id,
 		NetworkID: network,
 	})

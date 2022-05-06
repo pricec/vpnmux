@@ -2,83 +2,77 @@ package database_test
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/pricec/vpnmux/pkg/database"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUpdateClientNetwork(t *testing.T) {
 	ctx := context.Background()
 
-	f, err := os.CreateTemp("", "")
-	assert.Nil(t, err, "unexpected error creating temporary file")
-	f.Close()
-	defer os.Remove(f.Name())
-
-	db, err := database.New(ctx, f.Name())
-	assert.Nil(t, err, "unexpected error creating database")
-	assert.NotNil(t, db, "unexpected nil database returned")
-
-	c, err := db.ClientNetworks.Put(ctx, &database.ClientNetwork{
-		ClientID:  "client",
-		NetworkID: "network",
+	h, err := NewHarness(ctx, HarnessOptions{
+		NumClients:  1,
+		NumNetworks: 2,
 	})
-	assert.Nil(t, err)
-	assert.Equal(t, "client", c.ClientID)
-	assert.Equal(t, "network", c.NetworkID)
+	require.Nil(t, err)
+	defer h.Close()
 
-	c.NetworkID = "network2"
+	c, err := h.DB.ClientNetworks.Put(ctx, &database.ClientNetwork{
+		ClientID:  h.Clients[0].ID,
+		NetworkID: h.Networks[0].ID,
+	})
+	require.Nil(t, err)
+	require.Equal(t, h.Clients[0].ID, c.ClientID)
+	require.Equal(t, h.Networks[0].ID, c.NetworkID)
 
-	err = db.ClientNetworks.Update(ctx, c)
-	assert.Nil(t, err)
+	c.NetworkID = h.Networks[1].ID
 
-	c, err = db.ClientNetworks.Get(ctx, c.ClientID)
-	assert.Nil(t, err)
-	assert.Equal(t, "client", c.ClientID)
-	assert.Equal(t, "network2", c.NetworkID)
+	err = h.DB.ClientNetworks.Update(ctx, c)
+	require.Nil(t, err)
+
+	c, err = h.DB.ClientNetworks.Get(ctx, c.ClientID)
+	require.Nil(t, err)
+	require.Equal(t, h.Clients[0].ID, c.ClientID)
+	require.Equal(t, h.Networks[1].ID, c.NetworkID)
 }
 
 func TestClientNetwork(t *testing.T) {
 	ctx := context.Background()
-
-	f, err := os.CreateTemp("", "")
-	assert.Nil(t, err, "unexpected error creating temporary file")
-	f.Close()
-	defer os.Remove(f.Name())
-
-	db, err := database.New(ctx, f.Name())
-	assert.Nil(t, err, "unexpected error creating database")
-	assert.NotNil(t, db, "unexpected nil database returned")
-
-	cns, err := db.ClientNetworks.List(ctx)
-	assert.Nil(t, err)
-	assert.Empty(t, cns)
-
-	cn, err := db.ClientNetworks.Put(ctx, &database.ClientNetwork{
-		ClientID:  "client",
-		NetworkID: "network",
+	h, err := NewHarness(ctx, HarnessOptions{
+		NumClients:  1,
+		NumNetworks: 1,
 	})
-	assert.Nil(t, err)
-	assert.NotNil(t, cn)
+	require.Nil(t, err)
+	defer h.Close()
 
-	c, err := db.ClientNetworks.Get(ctx, "test")
-	assert.Equal(t, database.ErrNotFound, err)
-	assert.Nil(t, c)
+	cns, err := h.DB.ClientNetworks.List(ctx)
+	require.Nil(t, err)
+	require.Empty(t, cns)
 
-	c, err = db.ClientNetworks.Get(ctx, cn.ClientID)
-	assert.Nil(t, err)
-	assert.NotNil(t, c)
+	cn, err := h.DB.ClientNetworks.Put(ctx, &database.ClientNetwork{
+		ClientID:  h.Clients[0].ID,
+		NetworkID: h.Networks[0].ID,
+	})
+	require.Nil(t, err)
+	require.NotNil(t, cn)
 
-	cns, err = db.ClientNetworks.List(ctx)
-	assert.Nil(t, err)
-	assert.Equal(t, 1, len(cns))
+	c, err := h.DB.ClientNetworks.Get(ctx, "test")
+	require.Equal(t, database.ErrNotFound, err)
+	require.Nil(t, c)
 
-	err = db.ClientNetworks.Delete(ctx, cn.ClientID)
-	assert.Nil(t, err)
+	c, err = h.DB.ClientNetworks.Get(ctx, cn.ClientID)
+	require.Nil(t, err)
+	require.NotNil(t, c)
 
-	cns, err = db.ClientNetworks.List(ctx)
-	assert.Nil(t, err)
-	assert.Empty(t, cns)
+	cns, err = h.DB.ClientNetworks.List(ctx)
+	require.Nil(t, err)
+	require.Equal(t, 1, len(cns))
+
+	err = h.DB.ClientNetworks.Delete(ctx, cn.ClientID)
+	require.Nil(t, err)
+
+	cns, err = h.DB.ClientNetworks.List(ctx)
+	require.Nil(t, err)
+	require.Empty(t, cns)
 }

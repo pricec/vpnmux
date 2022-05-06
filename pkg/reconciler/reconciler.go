@@ -51,18 +51,3 @@ func (r *Reconciler) CreateNetwork(ctx context.Context, n *database.Network) (*d
 	}
 	return r.Networks.create(ctx, n.Name, cfg)
 }
-
-func (r *Reconciler) CreateClientNetwork(ctx context.Context, cn *database.ClientNetwork) (*database.ClientNetwork, error) {
-	// TODO: why doesn't sqlite driver enforce foreign key constraints?
-	_, _, err := r.Clients.Get(ctx, cn.ClientID)
-	if err != nil {
-		return nil, err
-	}
-
-	_, _, err = r.Networks.Get(ctx, cn.NetworkID)
-	if err != nil {
-		return nil, err
-	}
-
-	return r.ClientNetworks.Create(ctx, cn)
-}

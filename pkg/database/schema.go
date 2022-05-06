@@ -2,6 +2,9 @@ package database
 
 var schema = []string{
 	`
+    PRAGMA foreign_keys = ON;
+    `,
+	`
     CREATE TABLE IF NOT EXISTS credential(
         id TEXT NOT NULL PRIMARY KEY,
         name TEXT NOT NULL,

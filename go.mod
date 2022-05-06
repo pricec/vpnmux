@@ -8,5 +8,5 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/stretchr/testify v1.7.1
-	modernc.org/sqlite v1.16.0
+	modernc.org/sqlite v1.17.1
 )
