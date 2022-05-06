@@ -72,7 +72,7 @@ func NewContainer(id string, cfg *openvpn.Config) (*Container, error) {
 		"-d", imageName, "openvpn.conf",
 	).Run()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("running container: %w", err)
 	}
 	// TODO: clean up if this fails?
 	return NewContainerFromID(id)
@@ -81,23 +81,23 @@ func NewContainer(id string, cfg *openvpn.Config) (*Container, error) {
 func NewContainerFromID(id string) (*Container, error) {
 	output, err := exec.Command("docker", "ps", "-q", "--filter", fmt.Sprintf("label=id=%s", id)).Output()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("listing containers: %w", err)
 	}
 
 	dockerID := string(output[:len(output)-1])
 	output, err = exec.Command("docker", "inspect", dockerID).Output()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("inspecting container: %w", err)
 	}
 
 	inspect := []ContainerInspectOutput{}
 	if err := json.Unmarshal(output, &inspect); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unmarshaling container inspect: %w", err)
 	}
 
 	routeTableID, err := strconv.Atoi(inspect[0].Config.Labels["route-table-id"])
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parsing route-table-id: %w", err)
 	}
 
 	cfg, err := openvpn.NewConfigFromID(inspect[0].Config.Labels["config-id"])
@@ -130,10 +130,16 @@ func (v *Container) configureRouting() error {
 		return nil
 	} else if exists {
 		if err := exec.Command("ip", "route", "del", "default", "table", strconv.Itoa(v.RouteTableID)).Run(); err != nil {
-			return err
+			return fmt.Errorf("ip route del default: %w", err)
 		}
 	}
-	return exec.Command("ip", "route", "add", "default", "via", v.IPAddress, "table", strconv.Itoa(v.RouteTableID)).Run()
+
+	output, err := exec.Command("ip", "route", "add", "default", "via", v.IPAddress, "table", strconv.Itoa(v.RouteTableID)).CombinedOutput()
+	if err != nil {
+		fmt.Println(string(output))
+		return fmt.Errorf("ip route add default: %w", err)
+	}
+	return nil
 }
 
 func (v *Container) Close() error {

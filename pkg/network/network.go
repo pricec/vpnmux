@@ -41,7 +41,7 @@ func New(id string, cfg *openvpn.Config) (*Network, error) {
 		id,
 	).Run()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed creating network: %w", err)
 	}
 
 	_, err = NewContainer(id, cfg)

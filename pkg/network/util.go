@@ -52,7 +52,7 @@ func unusedRouteTableID() (int, error) {
 	for i := 1; i < 253; i = i + 1 {
 		output, err := exec.Command("ip", "route", "show", "table", strconv.Itoa(i)).Output()
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("ip route show: %w", err)
 		} else if len(output) == 0 {
 			return i, nil
 		}
@@ -63,7 +63,7 @@ func unusedRouteTableID() (int, error) {
 func defaultRouteForTable(tableID int) (bool, string, error) {
 	output, err := exec.Command("ip", "route", "show", "table", strconv.Itoa(tableID), "default").Output()
 	if err != nil {
-		return false, "", err
+		return false, "", fmt.Errorf("ip route show table: %w", err)
 	} else if len(output) == 0 {
 		return false, "", nil
 	}

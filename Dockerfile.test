@@ -1,0 +1,5 @@
+ARG GO_ALPINE_IMAGE
+
+FROM ${GO_ALPINE_IMAGE}
+
+RUN apk add docker-cli
