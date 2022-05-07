@@ -32,7 +32,7 @@ type Network struct {
 	Container *Container
 }
 
-func New(id string, cfg *openvpn.Config) (*Network, error) {
+func New(id, image, subnet string, cfg *openvpn.Config) (*Network, error) {
 	// TODO: use docker library instead
 	err := exec.Command(
 		"docker", "network", "create",
@@ -44,7 +44,7 @@ func New(id string, cfg *openvpn.Config) (*Network, error) {
 		return nil, fmt.Errorf("failed creating network: %w", err)
 	}
 
-	_, err = NewContainer(id, cfg)
+	_, err = NewContainer(id, image, subnet, cfg)
 	if err != nil {
 		return nil, err
 	}

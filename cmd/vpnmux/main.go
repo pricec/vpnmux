@@ -6,12 +6,17 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/pricec/vpnmux/pkg/api"
+	"github.com/pricec/vpnmux/pkg/config"
 )
 
 func main() {
+	cfg, err := config.New()
+	if err != nil {
+		log.Fatalf("error reading configuration: %v", err)
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	sigCh := make(chan os.Signal, 1)
 	doneCh := make(chan struct{})
@@ -26,9 +31,7 @@ func main() {
 	}()
 
 	server, err := api.NewServer(ctx, api.ServerOptions{
-		ShutdownTimeout: 10 * time.Second,
-		ListenPort:      8080,
-		DBPath:          "/var/lib/vpnmux/v1.db",
+		Config: cfg,
 	})
 	if err != nil {
 		log.Fatalf("error setting up API server: %v", err)
@@ -39,17 +42,6 @@ func main() {
 			log.Printf("error closing server: %v", err)
 		}
 	}()
-
-	/*
-		rt, err := network.NewVPNRoutingTable(100, c.IPAddress)
-		if err != nil {
-			log.Fatalf("error setting up routing table: %v", err)
-		}
-
-		if err := rt.AddSource("192.168.1.60"); err != nil {
-			log.Printf("error adding source to routing table: %v", err)
-		}
-	*/
 
 	<-doneCh
 }

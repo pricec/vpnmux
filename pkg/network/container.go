@@ -10,7 +10,7 @@ import (
 	"github.com/pricec/vpnmux/pkg/openvpn"
 )
 
-const imageName = "openvpn-client"
+const imageName = "pricec/openvpn-client"
 
 type ContainerInspectOutput struct {
 	ID    string   `json:"Id"`
@@ -50,7 +50,7 @@ type Container struct {
 	IPAddress    string
 }
 
-func NewContainer(id string, cfg *openvpn.Config) (*Container, error) {
+func NewContainer(id, image, subnet string, cfg *openvpn.Config) (*Container, error) {
 	// TODO: use docker library instead of exec
 	routeTableID, err := unusedRouteTableID()
 	if err != nil {
@@ -65,11 +65,12 @@ func NewContainer(id string, cfg *openvpn.Config) (*Container, error) {
 		"--device", "/dev/net/tun",
 		"-v", fmt.Sprintf("%s:/etc/openvpn/config", cfg.Dir),
 		"-w", "/etc/openvpn/config",
+		"-e", fmt.Sprintf("LOCAL_SUBNET_CIDR=%s", subnet),
 		"--label", fmt.Sprintf("%s=%s", labelKey, labelValue),
 		"--label", fmt.Sprintf("id=%s", id),
 		"--label", fmt.Sprintf("config-id=%s", cfg.ID),
 		"--label", fmt.Sprintf("route-table-id=%d", routeTableID),
-		"-d", imageName, "openvpn.conf",
+		"-d", image, "openvpn.conf",
 	).Run()
 	if err != nil {
 		return nil, fmt.Errorf("running container: %w", err)

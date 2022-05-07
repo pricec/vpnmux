@@ -6,6 +6,11 @@ import (
 	"github.com/pricec/vpnmux/pkg/database"
 )
 
+type Options struct {
+	DB      *database.Database
+	Network NetworkReconcilerOptions
+}
+
 type Reconciler struct {
 	db             *database.Database
 	Configs        *ConfigReconciler
@@ -14,29 +19,29 @@ type Reconciler struct {
 	ClientNetworks *ClientNetworkReconciler
 }
 
-func New(ctx context.Context, db *database.Database) (*Reconciler, error) {
-	configs, err := NewConfigReconciler(ctx, db)
+func New(ctx context.Context, opts Options) (*Reconciler, error) {
+	configs, err := NewConfigReconciler(ctx, opts.DB)
 	if err != nil {
 		return nil, err
 	}
 
-	networks, err := NewNetworkReconciler(ctx, db)
+	networks, err := NewNetworkReconciler(ctx, opts.DB, opts.Network)
 	if err != nil {
 		return nil, err
 	}
 
-	clients, err := NewClientReconciler(ctx, db)
+	clients, err := NewClientReconciler(ctx, opts.DB)
 	if err != nil {
 		return nil, err
 	}
 
-	clientNetworks, err := NewClientNetworkReconciler(ctx, db)
+	clientNetworks, err := NewClientNetworkReconciler(ctx, opts.DB)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Reconciler{
-		db:             db,
+		db:             opts.DB,
 		Configs:        configs,
 		Networks:       networks,
 		Clients:        clients,

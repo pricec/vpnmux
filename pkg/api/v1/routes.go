@@ -7,17 +7,24 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/pricec/vpnmux/pkg/config"
 	"github.com/pricec/vpnmux/pkg/database"
 	"github.com/pricec/vpnmux/pkg/reconciler"
 )
 
-func RegisterHandlers(ctx context.Context, r *mux.Router, dbPath string) {
-	db, err := database.New(ctx, dbPath)
+func RegisterHandlers(ctx context.Context, r *mux.Router, cfg *config.Config) {
+	db, err := database.New(ctx, cfg.DBPath)
 	if err != nil {
 		log.Panicf("error opening database: %v", err)
 	}
 
-	rec, err := reconciler.New(ctx, db)
+	rec, err := reconciler.New(ctx, reconciler.Options{
+		DB: db,
+		Network: reconciler.NetworkReconcilerOptions{
+			VPNImage:        cfg.VPNImage,
+			LocalSubnetCIDR: cfg.LocalSubnetCIDR,
+		},
+	})
 	if err != nil {
 		log.Panicf("error creating reconciler: %v", err)
 	}

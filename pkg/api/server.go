@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pricec/vpnmux/pkg/api/v1"
+	"github.com/pricec/vpnmux/pkg/config"
 )
 
 type HealthHandler struct{}
@@ -24,23 +25,21 @@ type Server struct {
 }
 
 type ServerOptions struct {
-	ShutdownTimeout time.Duration
-	ListenPort      uint16
-	DBPath          string
+	Config *config.Config
 }
 
 func NewServer(ctx context.Context, opts ServerOptions) (*Server, error) {
 	r := mux.NewRouter()
 	r.Handle("/healthz", HealthHandler{}).Methods("GET")
-	v1.RegisterHandlers(ctx, r.PathPrefix("/v1").Subrouter(), opts.DBPath)
+	v1.RegisterHandlers(ctx, r.PathPrefix("/v1").Subrouter(), opts.Config)
 
 	s := &Server{
 		server: &http.Server{
 			// TODO: make listen interface configurable
-			Addr:    fmt.Sprintf(":%d", opts.ListenPort),
+			Addr:    fmt.Sprintf(":%d", opts.Config.ListenPort),
 			Handler: r,
 		},
-		shutdownTimeout: opts.ShutdownTimeout,
+		shutdownTimeout: opts.Config.ShutdownTimeout,
 	}
 	go s.start()
 	return s, nil

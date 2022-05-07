@@ -9,21 +9,30 @@ import (
 	"github.com/pricec/vpnmux/pkg/openvpn"
 )
 
+type NetworkReconcilerOptions struct {
+	VPNImage        string
+	LocalSubnetCIDR string
+}
+
 type NetworkReconciler struct {
-	db *database.Database
+	db   *database.Database
+	opts NetworkReconcilerOptions
 }
 
 func (r *NetworkReconciler) Update(ctx context.Context, cfg *database.Network) (*database.Network, error) {
 	return nil, fmt.Errorf("TODO: implement network update reconciler")
 }
 
-func NewNetworkReconciler(ctx context.Context, db *database.Database) (*NetworkReconciler, error) {
+func NewNetworkReconciler(ctx context.Context, db *database.Database, opts NetworkReconcilerOptions) (*NetworkReconciler, error) {
 	nets, err := db.Networks.List(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	r := &NetworkReconciler{db: db}
+	r := &NetworkReconciler{
+		db:   db,
+		opts: opts,
+	}
 	for _, net := range nets {
 		if _, _, err := r.check(ctx, net.ID); err != nil {
 			return nil, err
@@ -60,7 +69,7 @@ func (r *NetworkReconciler) create(ctx context.Context, name string, cfg *openvp
 		return nil, err
 	}
 
-	_, err = network.New(net.ID, cfg)
+	_, err = network.New(net.ID, r.opts.VPNImage, r.opts.LocalSubnetCIDR, cfg)
 	if err != nil {
 		// TODO: clean up database
 		return nil, err

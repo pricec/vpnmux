@@ -1,7 +1,5 @@
 #!/bin/sh
 
-LOCAL_SUBNET_CIDR=$1
-
 iptables -t nat -A POSTROUTING -o tun0 -j MASQUERADE
 iptables -t filter -A FORWARD -i eth0 -o !tun0 -j DROP
 
