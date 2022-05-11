@@ -10,8 +10,6 @@ import (
 	"github.com/pricec/vpnmux/pkg/openvpn"
 )
 
-const imageName = "pricec/openvpn-client"
-
 type ContainerInspectOutput struct {
 	ID    string   `json:"Id"`
 	Args  []string `json:"Args"`
@@ -66,6 +64,7 @@ func NewContainer(id, image, subnet string, cfg *openvpn.Config) (*Container, er
 		"-v", fmt.Sprintf("%s:/etc/openvpn/config", cfg.Dir),
 		"-w", "/etc/openvpn/config",
 		"-e", fmt.Sprintf("LOCAL_SUBNET_CIDR=%s", subnet),
+		"--pull", "always",
 		"--label", fmt.Sprintf("%s=%s", labelKey, labelValue),
 		"--label", fmt.Sprintf("id=%s", id),
 		"--label", fmt.Sprintf("config-id=%s", cfg.ID),
