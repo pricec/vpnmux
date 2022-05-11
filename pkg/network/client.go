@@ -7,12 +7,16 @@ import (
 )
 
 type Client struct {
-	Address string
+	Address      string
+	LANInterface string
+	WANInterface string
 }
 
-func NewClient(address string) (*Client, error) {
+func NewClient(address, lanInterface, wanInterface string) (*Client, error) {
 	c := &Client{
-		Address: address,
+		Address:      address,
+		LANInterface: lanInterface,
+		WANInterface: wanInterface,
 	}
 
 	if err := c.preventForwarding(); err != nil {
@@ -30,8 +34,8 @@ func (c *Client) iptablesCommand(operation string) *exec.Cmd {
 		"iptables",
 		"-t", "filter",
 		fmt.Sprintf("-%s", operation), "FORWARD",
-		"-i", lanInterface,
-		"-o", wanInterface,
+		"-i", c.LANInterface,
+		"-o", c.WANInterface,
 		"-s", c.Address,
 		"-j", "DROP",
 	)

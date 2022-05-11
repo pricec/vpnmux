@@ -24,6 +24,10 @@ func RegisterHandlers(ctx context.Context, r *mux.Router, cfg *config.Config) {
 			VPNImage:        cfg.VPNImage,
 			LocalSubnetCIDR: cfg.LocalSubnetCIDR,
 		},
+		Forwarding: reconciler.ForwardingOptions{
+			LANInterface: cfg.LANInterface,
+			WANInterface: cfg.WANInterface,
+		},
 	})
 	if err != nil {
 		log.Panicf("error creating reconciler: %v", err)

@@ -12,6 +12,8 @@ type Config struct {
 	LocalSubnetCIDR string        `env:"VPNMUX_SUBNET_CIDR,notEmpty"`
 	ShutdownTimeout time.Duration `env:"VPNMUX_SHUTDOWN_TIMEOUT" envDefault:"10s"`
 	ListenPort      uint16        `env:"VPNMUX_LISTEN_PORT" envDefault:"8080"`
+	LANInterface    string        `env:"VPNMUX_LAN_INTERFACE,notEmpty"`
+	WANInterface    string        `env:"VPNMUX_WAN_INTERFACE,notEmpty"`
 }
 
 func New() (*Config, error) {

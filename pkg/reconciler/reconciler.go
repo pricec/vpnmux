@@ -6,9 +6,15 @@ import (
 	"github.com/pricec/vpnmux/pkg/database"
 )
 
+type ForwardingOptions struct {
+	LANInterface string
+	WANInterface string
+}
+
 type Options struct {
-	DB      *database.Database
-	Network NetworkReconcilerOptions
+	DB         *database.Database
+	Network    NetworkReconcilerOptions
+	Forwarding ForwardingOptions
 }
 
 type Reconciler struct {
@@ -30,12 +36,12 @@ func New(ctx context.Context, opts Options) (*Reconciler, error) {
 		return nil, err
 	}
 
-	clients, err := NewClientReconciler(ctx, opts.DB)
+	clients, err := NewClientReconciler(ctx, opts.DB, opts.Forwarding)
 	if err != nil {
 		return nil, err
 	}
 
-	clientNetworks, err := NewClientNetworkReconciler(ctx, opts.DB)
+	clientNetworks, err := NewClientNetworkReconciler(ctx, opts.DB, opts.Forwarding)
 	if err != nil {
 		return nil, err
 	}

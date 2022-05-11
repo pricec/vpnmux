@@ -9,20 +9,24 @@ import (
 )
 
 type ClientNetworkReconciler struct {
-	db *database.Database
+	db         *database.Database
+	forwarding ForwardingOptions
 }
 
 func (r *ClientNetworkReconciler) Update(ctx context.Context, cfg *database.ClientNetwork) (*database.ClientNetwork, error) {
 	return nil, fmt.Errorf("TODO: implement client-network update reconciler")
 }
 
-func NewClientNetworkReconciler(ctx context.Context, db *database.Database) (*ClientNetworkReconciler, error) {
+func NewClientNetworkReconciler(ctx context.Context, db *database.Database, forwarding ForwardingOptions) (*ClientNetworkReconciler, error) {
 	nets, err := db.ClientNetworks.List(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	r := &ClientNetworkReconciler{db: db}
+	r := &ClientNetworkReconciler{
+		db:         db,
+		forwarding: forwarding,
+	}
 	for _, net := range nets {
 		if _, _, err := r.check(ctx, net.ClientID); err != nil {
 			return nil, err
@@ -42,7 +46,7 @@ func (r *ClientNetworkReconciler) check(ctx context.Context, id string) (*databa
 		return nil, nil, err
 	}
 
-	client, err := network.NewClient(c.Address)
+	client, err := network.NewClient(c.Address, r.forwarding.LANInterface, r.forwarding.WANInterface)
 	if err != nil {
 		return nil, nil, err
 	}
