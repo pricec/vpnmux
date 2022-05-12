@@ -10,6 +10,7 @@ the connection fails, the host will lose connectivity.
 VERSION=0.2.1-beta1
 
 curl -Lo /usr/local/bin/vpnmux-${VERSION} https://github.com/pricec/vpnmux/releases/download/${VERSION}/vpnmux-${VERSION}
+chmod +x /usr/local/bin/vpnmux-${VERSION}
 
 cat > /etc/systemd/system/vpnmux.service <<EOF
 [Unit]
