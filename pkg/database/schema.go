@@ -49,4 +49,11 @@ var schema = []string{
         FOREIGN KEY(network_id) REFERENCES network(id)
     );
     `,
+	`
+    CREATE TABLE IF NOT EXISTS dns_route(
+        id INTEGER CHECK( id=0 ) NOT NULL PRIMARY KEY,
+        network_id TEXT,
+        FOREIGN KEY(network_id) REFERENCES network(id)
+    );
+    `,
 }

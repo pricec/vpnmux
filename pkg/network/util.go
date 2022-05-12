@@ -18,8 +18,9 @@ var (
 // true iff source is currently routed to a numbered route table
 // TODO: ugly implemenation can probably be improved upon
 // TODO: use library code
-func routeTableIDsForSource(source string) ([]int, error) {
-	output, err := exec.Command("ip", "rule", "show", "from", source).Output()
+func routeTableIDsForSelector(selector ...string) ([]int, error) {
+	args := append([]string{"rule", "show"}, selector...)
+	output, err := exec.Command("ip", args...).Output()
 	if err != nil {
 		return nil, err
 	}

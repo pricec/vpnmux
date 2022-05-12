@@ -7,7 +7,7 @@ the connection fails, the host will lose connectivity.
 
 # Installation & Configuration
 ```bash
-VERSION=0.2.1-beta1
+VERSION=0.3.1-beta1
 
 curl -Lo /usr/local/bin/vpnmux-${VERSION} https://github.com/pricec/vpnmux/releases/download/${VERSION}/vpnmux-${VERSION}
 chmod +x /usr/local/bin/vpnmux-${VERSION}
@@ -50,6 +50,9 @@ VPNMUX_LISTEN_PORT=8080
 # expose themselves when updating the vpnmux config or when a VPN is down.
 VPNMUX_LAN_INTERFACE=lan0
 VPNMUX_WAN_INTERFACE=wan0
+# (optional) DNS fwmark to use for routing locally-generated DNS packets
+# (default=0x0001)
+VPNMUX_DNS_MARK=0x0001
 EOF
 
 systemctl daemon-reload

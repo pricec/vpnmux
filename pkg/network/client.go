@@ -60,7 +60,7 @@ func (c *Client) preventForwarding() error {
 }
 
 func (c *Client) SetRouteTable(id int) error {
-	routeTableIDs, err := routeTableIDsForSource(c.Address)
+	routeTableIDs, err := routeTableIDsForSelector("from", c.Address)
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func (c *Client) SetRouteTable(id int) error {
 }
 
 func (c *Client) ClearRoutes() error {
-	routeTableIDs, err := routeTableIDsForSource(c.Address)
+	routeTableIDs, err := routeTableIDsForSelector("from", c.Address)
 	if err != nil {
 		return err
 	}

@@ -27,6 +27,7 @@ func RegisterHandlers(ctx context.Context, r *mux.Router, cfg *config.Config) {
 		Forwarding: reconciler.ForwardingOptions{
 			LANInterface: cfg.LANInterface,
 			WANInterface: cfg.WANInterface,
+			DNSMark:      cfg.DNSMark,
 		},
 	})
 	if err != nil {
@@ -68,6 +69,10 @@ func RegisterHandlers(ctx context.Context, r *mux.Router, cfg *config.Config) {
 	r.HandleFunc("/client/{id}/network", mgr.GetClientNetwork).Methods("GET")
 	r.HandleFunc("/client/{id}/network", mgr.UnsetClientNetwork).Methods("DELETE")
 	r.HandleFunc("/client/{id}/network/{network}", mgr.SetClientNetwork).Methods("POST")
+
+	r.HandleFunc("/dns", mgr.GetDNS).Methods("GET")
+	r.HandleFunc("/dns/{network}", mgr.SetDNS).Methods("POST")
+	r.HandleFunc("/dns", mgr.UnsetDNS).Methods("DELETE")
 }
 
 type Manager struct {
@@ -109,4 +114,19 @@ func check(w http.ResponseWriter, result interface{}, err error, alt Error) {
 		log.Printf("error encoding response: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
+}
+
+func (m *Manager) GetDNS(w http.ResponseWriter, r *http.Request) {
+	route, err := m.rec.DNS.Get(r.Context())
+	check(w, route, err, ErrorDatabase)
+}
+
+func (m *Manager) SetDNS(w http.ResponseWriter, r *http.Request) {
+	route, err := m.rec.DNS.Create(r.Context(), mux.Vars(r)["network"])
+	check(w, route, err, ErrorDatabase)
+}
+
+func (m *Manager) UnsetDNS(w http.ResponseWriter, r *http.Request) {
+	err := m.rec.DNS.Delete(r.Context())
+	check(w, ErrorOK, err, ErrorDatabase)
 }

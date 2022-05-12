@@ -9,6 +9,7 @@ import (
 type ForwardingOptions struct {
 	LANInterface string
 	WANInterface string
+	DNSMark      string
 }
 
 type Options struct {
@@ -23,6 +24,7 @@ type Reconciler struct {
 	Networks       *NetworkReconciler
 	Clients        *ClientReconciler
 	ClientNetworks *ClientNetworkReconciler
+	DNS            *DNSReconciler
 }
 
 func New(ctx context.Context, opts Options) (*Reconciler, error) {
@@ -46,12 +48,18 @@ func New(ctx context.Context, opts Options) (*Reconciler, error) {
 		return nil, err
 	}
 
+	dns, err := NewDNSReconciler(ctx, opts.DB, opts.Forwarding.DNSMark)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Reconciler{
 		db:             opts.DB,
 		Configs:        configs,
 		Networks:       networks,
 		Clients:        clients,
 		ClientNetworks: clientNetworks,
+		DNS:            dns,
 	}, nil
 }
 

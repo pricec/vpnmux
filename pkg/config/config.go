@@ -14,6 +14,7 @@ type Config struct {
 	ListenPort      uint16        `env:"VPNMUX_LISTEN_PORT" envDefault:"8080"`
 	LANInterface    string        `env:"VPNMUX_LAN_INTERFACE,notEmpty"`
 	WANInterface    string        `env:"VPNMUX_WAN_INTERFACE,notEmpty"`
+	DNSMark         string        `env:"VPNMUX_DNS_MARK" envDefault:"0x0001"`
 }
 
 func New() (*Config, error) {

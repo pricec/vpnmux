@@ -23,6 +23,7 @@ type Database struct {
 	Networks       *NetworkDatabase
 	Clients        *ClientDatabase
 	ClientNetworks *ClientNetworkDatabase
+	DNS            *DNSDatabase
 }
 
 func New(ctx context.Context, dbPath string) (*Database, error) {
@@ -57,6 +58,9 @@ func New(ctx context.Context, dbPath string) (*Database, error) {
 			db: db,
 		},
 		ClientNetworks: &ClientNetworkDatabase{
+			db: db,
+		},
+		DNS: &DNSDatabase{
 			db: db,
 		},
 	}, nil
