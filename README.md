@@ -5,8 +5,56 @@ hosts to specific VPN connections. When a host is assigned to a certain VPN
 connection, all traffic for that host is routed across the connection; if
 the connection fails, the host will lose connectivity.
 
-# Installation
-TODO
+# Installation & Configuration
+```bash
+VERSION=0.2.1-beta1
+
+curl -Lo /usr/local/bin/vpnmux-${VERSION} https://github.com/pricec/vpnmux/releases/download/${VERSION}/vpnmux-${VERSION}
+
+cat > /etc/systemd/system/vpnmux.service <<EOF
+[Unit]
+Description=VPN multiplexer
+Wants=network.target
+After=networking.service
+Before=network.target network-online.target
+
+[Service]
+EnvironmentFile=/var/lib/vpnmux/config.env
+ExecStart=/usr/local/bin/vpnmux-${VERSION}
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+WantedBy=network-online.target
+EOF
+
+cat > /var/lib/vpnmux/config.env <<EOF
+# (optional) Path to sqlite database file; used for storing resources
+# (default=/var/lib/vpnmux/v1.db)
+VPNMUX_DB_PATH=/var/lib/vpnmux/v1.db
+# (optional) Docker container image to use for VPN containers
+# (default=pricec/openvpn-client:latest)
+VPNMUX_IMAGE=pricec/openvpn-client:latest
+# Local subnet CIDR; needed to route traffic from the VPN back
+# to clients on the local network.
+VPNMUX_SUBNET_CIDR=192.168.1.0/24
+# (optional) HTTP server shutdown timeout (default=10s)
+VPNMUX_SHUTDOWN_TIMEOUT=10s
+# (optional) HTTP server listen port (default=8080)
+VPNMUX_LISTEN_PORT=8080
+# LAN and WAN interfaces on gateway host. These interface names are used
+# to create iptables rules preventing forwarding of packets from the
+# LAN interface to the WAN interface for each client configured in vpnmux.
+# This is a safety feature to ensure configured clients don't accidentally
+# expose themselves when updating the vpnmux config or when a VPN is down.
+VPNMUX_LAN_INTERFACE=lan0
+VPNMUX_WAN_INTERFACE=wan0
+EOF
+
+systemctl daemon-reload
+systemctl enable vpnmux.service
+systemctl restart vpnmux.service
+```
 
 # API
 ## v1
