@@ -17,8 +17,8 @@ func (r *DNSReconciler) Update(ctx context.Context, cfg *database.DNSRoute) (*da
 	return nil, fmt.Errorf("TODO: implement DNS update reconciler")
 }
 
-func NewDNSReconciler(ctx context.Context, db *database.Database, mark string) (*DNSReconciler, error) {
-	router, err := network.NewDNSRouter(ctx, mark)
+func NewDNSReconciler(ctx context.Context, db *database.Database, mark, localSubnet string) (*DNSReconciler, error) {
+	router, err := network.NewDNSRouter(ctx, mark, localSubnet)
 	if err != nil {
 		return nil, err
 	}

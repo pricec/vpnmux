@@ -197,3 +197,22 @@ The following endpoints are available.
   network.
 * `POST /v1/client/{id}/network/{id}` - assigns the given client to the
   given network.
+
+### DNS
+You may route locally generated DNS packets across a `Network`. `vpnmux` will
+mark local packets with TCP or UDP destination port 53 according to the
+configuration value `VPNMUX_DNS_MARK`.
+
+The DNS routing configuration has the following schema.
+```json
+{
+    "network_id": "<Network ID>"
+}
+```
+
+The following endpoints are available.
+* `GET /v1/dns` - returns the current DNS routing configuration.
+* `POST /v1/dns/{network}` - assigns the given network as the route for
+  locally generated DNS packets.
+* `DELETE /v1/dns` - unassigns any currently assigned DNS route; DNS packets
+  will egress the previously configured interface.

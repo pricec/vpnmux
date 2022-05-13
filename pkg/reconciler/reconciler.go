@@ -48,7 +48,7 @@ func New(ctx context.Context, opts Options) (*Reconciler, error) {
 		return nil, err
 	}
 
-	dns, err := NewDNSReconciler(ctx, opts.DB, opts.Forwarding.DNSMark)
+	dns, err := NewDNSReconciler(ctx, opts.DB, opts.Forwarding.DNSMark, opts.Network.LocalSubnetCIDR)
 	if err != nil {
 		return nil, err
 	}

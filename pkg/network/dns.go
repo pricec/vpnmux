@@ -11,6 +11,7 @@ import (
 
 type DNSRouter struct {
 	Mark         string
+	LocalSubnet  string
 	Gateway      string
 	RouteTableID int
 }
@@ -18,9 +19,10 @@ type DNSRouter struct {
 // TODO: how to prevent multiple creation? It only seems possible to use
 //       iptables -C if the mark value is known, but what if someone else
 //       instantiated us with a different mark?
-func NewDNSRouter(ctx context.Context, mark string) (*DNSRouter, error) {
+func NewDNSRouter(ctx context.Context, mark, localSubnet string) (*DNSRouter, error) {
 	r := &DNSRouter{
-		Mark: mark,
+		Mark:        mark,
+		LocalSubnet: localSubnet,
 	}
 
 	if err := r.ensureMark(); err != nil {
@@ -68,6 +70,7 @@ func (r *DNSRouter) iptablesCommand(operation, proto string) *exec.Cmd {
 		fmt.Sprintf("-%s", operation), "OUTPUT",
 		"-p", proto,
 		"--dport", "53",
+		"!", "-d", r.LocalSubnet,
 		"-j", "MARK",
 		"--set-mark", r.Mark,
 	)
