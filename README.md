@@ -7,7 +7,7 @@ the connection fails, the host will lose connectivity.
 
 # Installation & Configuration
 ```bash
-VERSION=0.3.2-beta1
+VERSION=0.3.3-beta1
 
 curl -Lo /usr/local/bin/vpnmux-${VERSION} https://github.com/pricec/vpnmux/releases/download/${VERSION}/vpnmux-${VERSION}
 chmod +x /usr/local/bin/vpnmux-${VERSION}
@@ -38,7 +38,7 @@ VPNMUX_DB_PATH=/var/lib/vpnmux/v1.db
 VPNMUX_IMAGE=pricec/openvpn-client:latest
 # Local subnet CIDR; needed to route traffic from the VPN back
 # to clients on the local network.
-VPNMUX_SUBNET_CIDR=192.168.1.0/24
+VPNMUX_SUBNET_CIDR=192.168.0.0/22
 # (optional) HTTP server shutdown timeout (default=10s)
 VPNMUX_SHUTDOWN_TIMEOUT=10s
 # (optional) HTTP server listen port (default=8080)

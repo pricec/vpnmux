@@ -55,7 +55,7 @@ func NewContainer(id, image, subnet string, cfg *openvpn.Config) (*Container, er
 		return nil, err
 	}
 
-	err = exec.Command(
+	output, err := exec.Command(
 		"docker", "run",
 		"--network", id,
 		"--restart", "unless-stopped",
@@ -70,15 +70,16 @@ func NewContainer(id, image, subnet string, cfg *openvpn.Config) (*Container, er
 		"--label", fmt.Sprintf("config-id=%s", cfg.ID),
 		"--label", fmt.Sprintf("route-table-id=%d", routeTableID),
 		"-d", image, "openvpn.conf",
-	).Run()
+	).CombinedOutput()
 	if err != nil {
-		return nil, fmt.Errorf("running container: %w", err)
+		return nil, fmt.Errorf("running container: %w; %v", err, string(output))
 	}
 	// TODO: clean up if this fails?
 	return NewContainerFromID(id)
 }
 
 func NewContainerFromID(id string) (*Container, error) {
+	// TODO: what if output is empty? we crash.
 	output, err := exec.Command("docker", "ps", "-q", "--filter", fmt.Sprintf("label=id=%s", id)).Output()
 	if err != nil {
 		return nil, fmt.Errorf("listing containers: %w", err)
